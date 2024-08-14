@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Промокоды</title>
+    <style>
+        /* Styles unchanged */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .promo-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .promo-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .promo-number {
+            margin-right: 5px;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .promo-code {
+            margin-right: 10px;
+            user-select: none;
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f4f4f4;
+            cursor: default;
+            display: inline-block;
+            width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+
+        .taken {
+            background-color: orange;
+            color: white;
+        }
+
+        .copy-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        .copy-btn:hover {
+            background-color: #45a049;
+        }
+
+        .message {
+            color: red;
+            font-weight: bold;
+        }
+
+        .promo-link {
+            color: #63b4ea;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>
+        <a href="https://t.me/Hamster_News_Key" target="_blank" class="promo-link">Наш канал</a>
+    </h2>
+    <ul class="promo-list" id="a"></ul>
+
+    <script>
+            const cyrb53 = (str, seed = 0) => {
+                let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+                for (let i = 0, ch; i < str.length; i++) {
+                    ch = str.charCodeAt(i);
+                    h1 = Math.imul(h1 ^ ch, 2654435761);
+                    h2 = Math.imul(h2 ^ ch, 1597334677);
+                }
+                h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+                h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+                h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+                h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+
+                return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+            };
+
+            let canCopy = true;
+            let copyTimeout;
+            const maxCopiesPerDay = 16;
+            const waitTime = 10000;
+            const scriptUrl = atob("aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J5a0pfWUpmT0FJNnhVWHZXZWZzVkNxQXpjNEhsTjJ5S3RtNmRDWVBrcjFOcnlrVGVBTGdUVWlPS3RNWUE3b3ZldDNGdy9leGVj");
+
+            function getStorageData() {
+                const storageData = localStorage.getItem('promoCopyData');
+                const today = new Date().toISOString().split('T')[0];
+                if (storageData) {
+                    const data = JSON.parse(storageData);
+                    if (data.date === today) {
+                        return data;
+                    }
+                }
+                return { date: today, copies: 0 };
+            }
+
+            function updateStorageData(data) {
+                localStorage.setItem('promoCopyData', JSON.stringify(data));
+            }
+
+            async function fetchPromoCodes() {
+                const storageData = getStorageData();
+                const copies = storageData.copies;
+
+                const scriptUrlWithParams = `${scriptUrl}?ip=${encodeURIComponent((await (await fetch('https://api.ipify.org?format=json')).json()).ip)}&copies=${copies}`;
+
+                const response = await fetch(scriptUrlWithParams);
+                const responseText = await response.text();
+                let text = '';
+                for (let i = 0; i < responseText.length; i++) {
+                    text += String.fromCharCode(responseText.charCodeAt(i) ^ 1);
+                }
+                const parsedResponse = JSON.parse(text);
+                return parsedResponse.promoCodes;
+            }
+
+            function updatePromoList(promoCodes) {
+                promoCodes.forEach((promo) => {
+                    const promoId = cyrb53(promo.code);
+                    const promoItem = document.getElementById(`promo${promoId}`);
+
+                    if (promoItem && promo.taken && !promoItem.classList.contains('taken')) {
+                        promoItem.classList.add('taken');
+                        const buttons = promoItem.parentElement.getElementsByTagName("button");
+                        if (buttons.length > 0) {
+                            buttons[0].remove();
+                        }
+                    }
+                });
+            }
+
+            async function initializePromoList() {
+                const promoCodes = await fetchPromoCodes();
+                promoCodes.sort((a, b) => a.taken - b.taken);
+
+                const promoListElement = document.getElementById('a');
+                promoListElement.innerHTML = '';
+
+                promoCodes.forEach((promo) => {
+                    const promoId = cyrb53(promo.code);
+                    const listItem = document.createElement('li');
+                    listItem.className = 'promo-item';
+
+                    const numberDiv = document.createElement('div');
+                    numberDiv.className = 'promo-number';
+                    numberDiv.textContent = `${promoCodes.indexOf(promo) + 1}.`;
+
+                    const promoCodeDiv = document.createElement('div');
+                    promoCodeDiv.className = 'promo-code' + (promo.taken ? ' taken' : '');
+                    promoCodeDiv.id = `promo${promoId}`;
+                    promoCodeDiv.textContent = promo.code.slice(0, 11) + '...';
+
+                    listItem.appendChild(numberDiv);
+                    listItem.appendChild(promoCodeDiv);
+
+                    if (!promo.taken) {
+                        const copyButton = document.createElement('button');
+                        copyButton.className = 'copy-btn';
+                        copyButton.textContent = 'Копировать';
+                        copyButton.onclick = async function () {
+                            const storageData = getStorageData();
+
+                            if (copyButton.textContent !== "Скопировано!" && storageData.copies >= maxCopiesPerDay) {
+                                alert("Вы достигли максимального количества копирований на сегодня.");
+                                return;
+                            }
+
+                            if (!canCopy && copyButton.textContent !== "Скопировано!") {
+                                alert("Подождите 10 секунд");
+                                return;
+                            }
+
+                            try {
+                                await navigator.clipboard.writeText(promo.code);
+                                promoCodeDiv.classList.add('taken');
+                                listItem.removeChild(copyButton);
+
+                                copyButton.textContent = "Скопировано!";
+                                canCopy = false;
+
+                                storageData.copies += 1;
+                                updateStorageData(storageData);
+
+                                const response = await fetch(scriptUrl, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded'
+                                    },
+                                    body: `code=${encodeURIComponent(promo.code)}&ip=${encodeURIComponent((await (await fetch('https://api.ipify.org?format=json')).json()).ip)}`
+                                });
+
+                                let result = await response.text();
+                                if (result !== "Success") {
+                                    alert("Не удалось отметить промокод как использованный.");
+                                }
+
+                                copyTimeout = setTimeout(() => {
+                                    canCopy = true;
+                                }, waitTime);
+
+                            } catch (err) {
+                                console.log(err);
+                            }
+                        };
+
+                        listItem.appendChild(copyButton);
+                    }
+
+                    promoListElement.appendChild(listItem);
+                });
+
+                setInterval(async () => {
+                    const updatedPromoCodes = await fetchPromoCodes();
+                    updatePromoList(updatedPromoCodes);
+                }, 1500);
+            }
+
+            initializePromoList();
+    </script>
+</body>
+
+</html>
